@@ -1,0 +1,12 @@
+torch>=2.0.0
+torchvision
+diffusers>=0.26.0
+transformers>=4.35.0
+accelerate>=0.24.0
+safetensors
+pillow
+numpy
+pandas
+open_clip_torch
+lpips
+scikit-image

@@ -1,0 +1,28 @@
+{
+  "pair1_image_editing": [
+    {
+      "id": "case_01_sneaker",
+      "filename": "case_01_sneaker.jpg",
+      "source_caption": "a photo of a white leather sneaker",
+      "instruct_prompt": "Turn the white leather sneaker into a blue denim sneaker",
+      "ledits_target_concept": ["blue denim sneaker"],
+      "target_caption": "a photo of a blue denim sneaker"
+    },
+    {
+      "id": "case_02_mug",
+      "filename": "case_02_mug.jpg",
+      "source_caption": "a ceramic coffee mug on a wooden table",
+      "instruct_prompt": "Change the wooden table background to a snowy mountain peak",
+      "ledits_target_concept": ["snowy mountain peak background"],
+      "target_caption": "a ceramic coffee mug on a snowy mountain peak"
+    },
+    {
+      "id": "case_03_perfume",
+      "filename": "case_03_perfume.jpg",
+      "source_caption": "a glass perfume bottle in studio lighting",
+      "instruct_prompt": "Add warm golden sunset lighting and water droplets",
+      "ledits_target_concept": ["warm golden sunset lighting, water droplets"],
+      "target_caption": "a glass perfume bottle with warm golden sunset lighting and water droplets"
+    }
+  ]
+}
