@@ -1,0 +1,77 @@
+# 1. Security & Environment Secrets
+.env
+.env.local
+*.key
+*.pem
+*.token
+
+# ==========================================
+# 2. Large Model Weights, Checkpoints & Artifacts
+# (Prevents GitHub 100MB file limit errors)
+*.pt
+*.pth
+*.bin
+*.onnx
+*.safetensors
+*.ckpt
+*.engine
+*.h5
+
+# Hugging Face & Torch cache directories
+.cache/
+huggingface/
+checkpoints/
+
+# Heavy 3D mesh outputs (Keep lightweight sample renders/JSONs, ignore huge meshes)
+*.obj
+*.glb
+*.gltf
+*.ply
+*.stl
+
+# Heavy video outputs (Track test scripts and frames, ignore large raw render dumps)
+*.mp4
+*.avi
+*.mov
+*.mkv
+
+# 3. Python & Conda Environment Artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments / Conda environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# 4. Jupyter & IDE Artifacts
+.ipynb_checkpoints/
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 5. OS Generated Files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
