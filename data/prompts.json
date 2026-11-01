@@ -3,26 +3,8 @@
     {
       "id": "case_01",
       "filename": "chef_dish_raw.jpg",
-      "prompt": "Place the dish on a dark rustic oak dining table with candlelit romantic ambiance and wine glasses in the background",
-      "image_path": "data/raw/pair1_image_editing",
-      "source_caption": "a spicy lobster dish on a plate",
-      "target_caption": "a spicy lobster dish on a candlelit romantic dark oak dining table"
-    },
-    {
-      "id": "case_02",
-      "filename": "roasted_spiced_corn_raw.jpg",
-      "prompt": "Place the corn on an outdoor teak patio table with bright golden hour sunlight and garden bokeh",
-      "image_path": "data/raw/pair1_image_editing",
-      "source_caption": "roasted spiced corn on a plate",
-      "target_caption": "roasted spiced corn on an outdoor teak patio table in golden hour"
-    },
-    {
-      "id": "case_03",
-      "filename": "caramel_coconut_custard_raw.jpg",
-      "prompt": "Place the custard dessert on a white Carrara marble cafe table with morning sunlight and espresso cup in background",
-      "image_path": "data/raw/pair1_image_editing",
-      "source_caption": "caramel coconut custard dessert",
-      "target_caption": "caramel coconut custard on a white marble cafe table in morning sunlight"
+      "prompt": "make this dish on a oak wooden table",
+      "image_path": "data/raw/pair1_image_editing"
     }
   ]
 }

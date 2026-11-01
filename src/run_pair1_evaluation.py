@@ -25,13 +25,9 @@ if str(PROJECT_ROOT) not in sys.path:
 
 # Import models and evaluation metrics
 from models.pair1_models import run_instruct_pix2pix, run_ledits_pp
-from evaluation.image_metrics import ImageEditingEvaluator
 
 def load_existing_raw_images(raw_dir: Path, cases_json: list) -> list:
-  """
-  Scans raw_dir for image files and returns only:
-  'id', 'filename', 'image_path', and 'prompt'.
-  """
+
   raw_dir.mkdir(parents=True, exist_ok=True)
   valid_extensions = {".jpg", ".jpeg", ".png", ".webp"}
   existing_files = sorted([f for f in raw_dir.iterdir() if f.suffix.lower() in valid_extensions])
@@ -54,34 +50,23 @@ def load_existing_raw_images(raw_dir: Path, cases_json: list) -> list:
   return active_cases
 
 def plot_results(df: pd.DataFrame, results_dir: Path):
-    if df.empty:
-        print("[Error] DataFrame is empty. No metric rows were generated to plot.")
-        return
 
     results_dir = Path(results_dir)
     results_dir.mkdir(parents=True, exist_ok=True)
 
     cols = [str(c).lower() for c in df.columns]
     
-    clip_col = df.columns[[i for i, c in enumerate(cols) if "clip" in c][0]] if any("clip" in c for c in cols) else None
-    lpips_col = df.columns[[i for i, c in enumerate(cols) if "lpips" in c][0]] if any("lpips" in c for c in cols) else None
     latency_col = df.columns[[i for i, c in enumerate(cols) if "latency" in c][0]] if any("latency" in c for c in cols) else "Latency_s"
     vram_col = df.columns[[i for i, c in enumerate(cols) if "vram" in c][0]] if any("vram" in c for c in cols) else "Peak_VRAM_GB"
 
-    available_cols = [c for c in [clip_col, lpips_col, latency_col, vram_col] if c is not None and c in df.columns]
-    
-    if not available_cols:
-        print("[Error] Could not find metric columns to plot. Available:", df.columns.tolist())
-        return
+    available_cols = [c for c in [ latency_col, vram_col] if c is not None and c in df.columns]
 
     avg_df = df.groupby("Model")[available_cols].mean().reset_index()
 
-    fig, axes = plt.subplots(2, 2, figsize=(10, 8))
+    fig, axes = plt.subplots(1, 2, figsize=(10, 8))
     axes = axes.flatten()
 
     metrics = [
-        (clip_col, "Edit Control (CLIP Score)\nHigher is Better", "#2ca02c", "{:.3f}"),
-        (lpips_col, "Identity Preservation (LPIPS)\nLower is Better", "#d62728", "{:.3f}"),
         (latency_col, "Inference Speed (Latency)\nLower is Better", "#1f77b4", "{:.1f}s"),
         (vram_col, "Memory (Peak VRAM)\nLower is Better", "#ff7f0e", "{:.1f} GB")
     ]
@@ -117,51 +102,44 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
     results_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. Load Prompts JSON if available
+    # Load Prompts JSON  
     prompts_file = root / "data" / "prompts.json"
     cases_from_json = []
     if prompts_file.exists():
         with open(prompts_file, "r", encoding="utf-8") as f:
             cases_from_json = json.load(f).get("pair1_image_editing", [])
 
-    # 2. Discover manually added raw images
+    # Discover manually added raw images
     cases = load_existing_raw_images(raw_dir, cases_from_json)
 
-    # 3. Detect Device
+    # Detect Device
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"\n[Execution] Running evaluation on compute device: {device.upper()}")
-
-    # 4. Run Model Executions
+    
+    # Run Model Executions
     res_sys_a = run_instruct_pix2pix(cases, raw_dir, out_dir, device=device)
     res_sys_b = run_ledits_pp(cases, raw_dir, out_dir, device=device)
 
-    # 5. Evaluate Quantitative Metrics
-    print("\n[Evaluation] Calculating CLIP text-image similarity, directional similarity, SSIM, and LPIPS...")
-    evaluator = ImageEditingEvaluator(device=device)
     rows = []
 
-    # --- RESTORED EVALUATION LOOP ---
+    # #Evalution metrics 
     for case in cases:
-        cid = case["id"]
-        source_cap = case.get("source_caption", "")
-        target_cap = case.get("prompt", case.get("instruction", case.get("target_caption", "")))
+      cid = case["id"]
 
-        for model_name, res_dict in [
-            ("InstructPix2Pix (System A)", res_sys_a),
-            ("LEDITS++ (System B)", res_sys_b),
-        ]:
-            orig_img, edit_img, latency, vram = res_dict[cid]
-            metrics = evaluator.evaluate_pair(orig_img, edit_img, source_cap, target_cap)
-            rows.append({
-                "Test_Case": cid,
-                "Image_File": case.get("filename", ""),
-                "Model": model_name,
-                **metrics,
-                "Latency_s": latency,
-                "Peak_VRAM_GB": vram,
-            })
+      for model_name, res_dict in [
+        ("InstructPix2Pix (System A)", res_sys_a),
+        ("LEDITS++ (System B)", res_sys_b),
+      ]:
+        _, _, latency, vram = res_dict[cid]
+            
+        rows.append({
+          "Test_Case": cid,
+          "Image_File": case.get("filename", ""),
+          "Model": model_name,
+          "Latency_s": latency,
+          "Peak_VRAM_GB": vram,
+        })
 
-    # 6. Build DataFrame and Render Results
+    # Build DataFrame and Render Results
     df = pd.DataFrame(rows)
     plot_results(df, results_dir)
 
