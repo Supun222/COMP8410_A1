@@ -1,3 +1,0 @@
-Test_Case,Image_File,Model,CLIP_Text_Sim,CLIP_Dir_Sim,SSIM,PSNR_dB,LPIPS,Latency_s,Peak_VRAM_GB
-case_01,chef_dish_raw.jpg,InstructPix2Pix (System A),0.2356,0.0889,0.2966,7.08,0.4047,12.805662155151367,2.6145596504211426
-case_01,chef_dish_raw.jpg,LEDITS++ (System B),0.1925,-0.0225,0.5918,18.49,0.1529,14.806010723114014,3.605778694152832

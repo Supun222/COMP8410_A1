@@ -11,11 +11,11 @@ from diffusers import (
 
 def run_instruct_pix2pix(cases, raw_dir, out_dir, device="cuda"):
     """
-    Model A: InstructPix2Pix batch runner.
+    Model A: InstructPix2Pix model.
     Takes cases, executes inference, measures latency/VRAM, and returns {cid: (orig, edit, latency, vram)}.
     """
-    dtype = torch.float16 if device == "cuda" else torch.float32
-    print(f"\n[Model A: InstructPix2Pix] Initializing on {device}...")
+     # device type
+    dtype = torch.float16 if device == "cuda" else torch.float32 
     
     pipe = StableDiffusionInstructPix2PixPipeline.from_pretrained(
         "timbrooks/instruct-pix2pix",
@@ -94,13 +94,13 @@ def run_ledits_pp(cases, raw_dir, out_dir, device="cuda"):
 
     for idx, case in enumerate(cases):
         cid = case["id"]
-        # Correctly prioritize 'filename' over 'image_name'
         img_name = case.get("filename", case.get("image_name"))
         input_path = os.path.join(raw_dir, img_name)
 
-        concepts = case.get("concepts", case.get("concept", case.get("target_caption", "studio table")))
-        if isinstance(concepts, str):
-            concepts = [concepts]
+        # Harmonized with Model A: retrieve the exact same prompt string
+        prompt = case.get("prompt", case.get("instruction", case.get("target_caption", "studio table")))
+        # LEDITS++ requires concepts as a list
+        concepts = [prompt]
 
         out_name = f"sys_b_{os.path.splitext(img_name)[0]}.png"
         output_path = os.path.join(out_dir, out_name)
@@ -114,6 +114,7 @@ def run_ledits_pp(cases, raw_dir, out_dir, device="cuda"):
 
         generator = torch.Generator(device=device).manual_seed(case.get("seed", 42))
 
+        # 1. Invert image into latent trajectory
         pipe.invert(
             image=orig_img,
             num_inversion_steps=35,
@@ -121,14 +122,16 @@ def run_ledits_pp(cases, raw_dir, out_dir, device="cuda"):
             generator=generator
         )
 
+        # 2. Apply editing concept
         result = pipe(
             editing_prompt=concepts,
-            reverse_editing_direction=[False] * len(concepts),
-            edit_guidance_scale=[7.0] * len(concepts),
-            edit_threshold=[0.75] * len(concepts),
+            reverse_editing_direction=[False],
+            edit_guidance_scale=[7.0],
+            edit_threshold=[0.75],
             num_inference_steps=35
         ).images[0]
 
+        # Metric Collection (Identical to Model A)
         latency = time.time() - t0
         vram = (torch.cuda.max_memory_allocated() / (1024**3)) if device == "cuda" else 0.0
 

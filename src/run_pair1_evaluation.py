@@ -27,70 +27,86 @@ if str(PROJECT_ROOT) not in sys.path:
 from models.pair1_models import run_instruct_pix2pix, run_ledits_pp
 from evaluation.image_metrics import ImageEditingEvaluator
 
-
 def load_existing_raw_images(raw_dir: Path, cases_json: list) -> list:
-    """
-    Scans data/raw/pair1_image_editing for actual .jpg/.png files.
-    Matches found files with case metadata from prompts.json or applies culinary fallback prompts.
-    """
-    raw_dir.mkdir(parents=True, exist_ok=True)
-    
-    valid_extensions = {".jpg", ".jpeg", ".png", ".webp"}
-    existing_files = sorted([f for f in raw_dir.iterdir() if f.suffix.lower() in valid_extensions])
-    
-    if not existing_files:
-        raise FileNotFoundError(
-            f"\n[Error] No image files found in: {raw_dir}\n"
-            f"Please drop your real .jpg or .png images into that directory before running."
-        )
+  """
+  Scans raw_dir for image files and returns only:
+  'id', 'filename', 'image_path', and 'prompt'.
+  """
+  raw_dir.mkdir(parents=True, exist_ok=True)
+  valid_extensions = {".jpg", ".jpeg", ".png", ".webp"}
+  existing_files = sorted([f for f in raw_dir.iterdir() if f.suffix.lower() in valid_extensions])
 
-    print(f"\n[Input Verification] Detected {len(existing_files)} raw image(s) in {raw_dir}:")
-    for f in existing_files:
-        print(f"  • {f.name}")
+  # Map by filename directly from the input json
+  case_lookup = {c["filename"]: c for c in cases_json if "filename" in c}
+  active_cases = []
 
-    case_lookup = {c["filename"]: c for c in cases_json if "filename" in c}
-    active_cases = []
+  for idx, img_file in enumerate(existing_files):
+    filename = img_file.name
+    meta = case_lookup.get(filename, {})
 
-    for idx, img_file in enumerate(existing_files):
-        filename = img_file.name
-        if filename in case_lookup:
-            active_cases.append(case_lookup[filename])
-        else:
-            # Domain-aligned fallback configuration for manually uploaded dishes
-            dish_name = img_file.stem.replace("_", " ").title()
-            active_cases.append({
-                "id": f"case_{idx+1:02d}",
-                "filename": filename,
-                "source_caption": f"a culinary prep photo of {dish_name}",
-                "target_caption": f"gourmet plated {dish_name} on a dark rustic oak dining table in fine dining restaurant setting",
-                "instruction": f"Place the plated {dish_name} onto a dark rustic oak dining table, fine dining restaurant setting, soft warm bokeh lighting",
-                "concepts": ["dark rustic oak dining table", "fine dining restaurant setting"],
-                "seed": 42 + idx
-            })
+    active_cases.append({
+      "id": meta.get("id", f"case_{idx+1:02d}"),
+      "filename": filename,
+      "image_path": str(img_file),
+      "prompt": meta.get("prompt", "")
+    })
 
-    return active_cases
-
+  return active_cases
 
 def plot_results(df: pd.DataFrame, results_dir: Path):
-    """Generates and saves comparative quantitative metric charts."""
-    summary = df.groupby("Model")[["CLIP_Text_Sim", "CLIP_Dir_Sim", "SSIM", "LPIPS"]].mean()
-    
-    ax = summary.plot(
-        kind="bar", 
-        figsize=(10, 5), 
-        rot=0, 
-        colormap="viridis"
-    )
-    plt.title("Pair 1 Quantitative Comparison: InstructPix2Pix vs. LEDITS++")
-    plt.ylabel("Score")
-    plt.grid(axis="y", linestyle="--", alpha=0.6)
-    plt.tight_layout()
-    
-    chart_path = results_dir / "pair1_metrics_comparison.png"
-    plt.savefig(chart_path, dpi=300)
-    plt.close()
-    print(f"[Results] Saved comparative plot to: {chart_path}")
+    if df.empty:
+        print("[Error] DataFrame is empty. No metric rows were generated to plot.")
+        return
 
+    results_dir = Path(results_dir)
+    results_dir.mkdir(parents=True, exist_ok=True)
+
+    cols = [str(c).lower() for c in df.columns]
+    
+    clip_col = df.columns[[i for i, c in enumerate(cols) if "clip" in c][0]] if any("clip" in c for c in cols) else None
+    lpips_col = df.columns[[i for i, c in enumerate(cols) if "lpips" in c][0]] if any("lpips" in c for c in cols) else None
+    latency_col = df.columns[[i for i, c in enumerate(cols) if "latency" in c][0]] if any("latency" in c for c in cols) else "Latency_s"
+    vram_col = df.columns[[i for i, c in enumerate(cols) if "vram" in c][0]] if any("vram" in c for c in cols) else "Peak_VRAM_GB"
+
+    available_cols = [c for c in [clip_col, lpips_col, latency_col, vram_col] if c is not None and c in df.columns]
+    
+    if not available_cols:
+        print("[Error] Could not find metric columns to plot. Available:", df.columns.tolist())
+        return
+
+    avg_df = df.groupby("Model")[available_cols].mean().reset_index()
+
+    fig, axes = plt.subplots(2, 2, figsize=(10, 8))
+    axes = axes.flatten()
+
+    metrics = [
+        (clip_col, "Edit Control (CLIP Score)\nHigher is Better", "#2ca02c", "{:.3f}"),
+        (lpips_col, "Identity Preservation (LPIPS)\nLower is Better", "#d62728", "{:.3f}"),
+        (latency_col, "Inference Speed (Latency)\nLower is Better", "#1f77b4", "{:.1f}s"),
+        (vram_col, "Memory (Peak VRAM)\nLower is Better", "#ff7f0e", "{:.1f} GB")
+    ]
+
+    for ax, (col, title, color, fmt) in zip(axes, metrics):
+        if col is None or col not in avg_df.columns:
+            ax.axis('off')
+            continue
+            
+        bars = ax.bar(avg_df["Model"], avg_df[col], color=color, width=0.45)
+        ax.set_title(title, fontweight="bold")
+        for bar in bars:
+            val = bar.get_height()
+            ax.text(
+                bar.get_x() + bar.get_width() / 2, 
+                val / 2, 
+                fmt.format(val), 
+                ha="center", va="center", color="white", fontweight="bold"
+            )
+
+    plt.tight_layout()
+    plot_path = results_dir / "pair1_4_core_metrics.png"
+    plt.savefig(plot_path, dpi=200)
+    plt.close()
+    print(f"[Plot Saved] {plot_path}")
 
 def main():
     root = PROJECT_ROOT
@@ -108,7 +124,7 @@ def main():
         with open(prompts_file, "r", encoding="utf-8") as f:
             cases_from_json = json.load(f).get("pair1_image_editing", [])
 
-    # 2. Discover manually added raw images (no synthetic placeholder boxes drawn)
+    # 2. Discover manually added raw images
     cases = load_existing_raw_images(raw_dir, cases_from_json)
 
     # 3. Detect Device
@@ -124,38 +140,29 @@ def main():
     evaluator = ImageEditingEvaluator(device=device)
     rows = []
 
+    # --- RESTORED EVALUATION LOOP ---
     for case in cases:
         cid = case["id"]
+        source_cap = case.get("source_caption", "")
+        target_cap = case.get("prompt", case.get("instruction", case.get("target_caption", "")))
+
         for model_name, res_dict in [
             ("InstructPix2Pix (System A)", res_sys_a),
             ("LEDITS++ (System B)", res_sys_b),
         ]:
             orig_img, edit_img, latency, vram = res_dict[cid]
-            metrics = evaluator.evaluate_pair(
-                orig_img, edit_img, case["source_caption"], case["target_caption"]
-            )
+            metrics = evaluator.evaluate_pair(orig_img, edit_img, source_cap, target_cap)
             rows.append({
                 "Test_Case": cid,
-                "Image_File": case["filename"],
+                "Image_File": case.get("filename", ""),
                 "Model": model_name,
                 **metrics,
                 "Latency_s": latency,
                 "Peak_VRAM_GB": vram,
             })
 
-    # 6. Save and Display Tabular Results
+    # 6. Build DataFrame and Render Results
     df = pd.DataFrame(rows)
-    csv_path = results_dir / "pair1_quantitative_metrics.csv"
-    df.to_csv(csv_path, index=False)
-    print(f"[Results] Exported full metric records to: {csv_path}")
-
-    print("\n" + "=" * 50)
-    print("           PAIR 1 SUMMARY BENCHMARK TABLE")
-    print("=" * 50)
-    print(df.groupby("Model").mean(numeric_only=True).to_string())
-    print("=" * 50)
-
-    # 7. Render Charts
     plot_results(df, results_dir)
 
 
