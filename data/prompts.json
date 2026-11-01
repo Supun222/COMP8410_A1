@@ -3,26 +3,26 @@
     {
       "id": "case_01",
       "filename": "chef_dish_raw.jpg",
-      "prompt": "A professional culinary photograph of the gourmet spicy lobster dish from chef_dish_raw.jpg, served in an elegant rustic ceramic bowl in the center of a rich, dark solid oak dining table. The setting is an intimate, romantic honeymoon dinner at dusk. Surrounding the dish are glowing, warm pillar candles and glass votives casting a soft, golden flicker across the polished wood grain and glossy red chilies. In the soft-focus background, two crystal wine glasses filled with sparkling white wine catch the candlelight, alongside scattered dark red rose petals and folded linen napkins. Shot on 85mm lens, f/1.8 aperture, shallow depth of field, warm romantic bokeh, cozy fine-dining ambiance, photorealistic, 8k resolution.",
+      "prompt": "Place the dish on a dark rustic oak dining table with candlelit romantic ambiance and wine glasses in the background",
       "image_path": "data/raw/pair1_image_editing",
-      "source_caption": "A gourmet spicy lobster dish in an elegant bowl",
-      "target_caption": "The gourmet spicy lobster dish served on an intimate, candlelit romantic dark oak dining table with wine glasses and rose petals in a warm fine-dining atmosphere"
+      "source_caption": "a spicy lobster dish on a plate",
+      "target_caption": "a spicy lobster dish on a candlelit romantic dark oak dining table"
     },
     {
       "id": "case_02",
       "filename": "roasted_spiced_corn_raw.jpg",
-      "prompt": "A professional commercial food photograph of the street-style roasted spiced sweet corn from roasted_spiced_corn_raw.jpg, plated on a matte black slate serving board atop a weathered outdoor teak patio table. The scene is bathed in golden hour afternoon sun, casting dramatic long shadows and highlighting the caramelized char and red chili flakes on the corn kernels. In the blurred background, an artisan stainless steel cocktail shaker, a glass filled with craft iced tea and fresh mint sprigs, and a small ramekin of lime crema sit under soft garden bokeh. Shot on 50mm lens, f/2.0 aperture, natural sunlight, crisp textures, gourmet al fresco dining vibe, ultra-detailed.",
+      "prompt": "Place the corn on an outdoor teak patio table with bright golden hour sunlight and garden bokeh",
       "image_path": "data/raw/pair1_image_editing",
-      "source_caption": "Plated street-style roasted spiced sweet corn with lime and seasoning",
-      "target_caption": "The roasted spiced sweet corn served outdoors on a matte black slate board atop a teak patio table under bright golden hour sunlight with craft iced tea in the background"
+      "source_caption": "roasted spiced corn on a plate",
+      "target_caption": "roasted spiced corn on an outdoor teak patio table in golden hour"
     },
     {
       "id": "case_03",
       "filename": "caramel_coconut_custard_raw.jpg",
-      "prompt": "A high-end dessert editorial photograph of the traditional caramel coconut custard pudding from caramel_coconut_custard_raw.jpg, elegantly centered on an ornate porcelain dessert plate with glossy dark caramel sauce pooling gently at the base. The plate rests on a polished white Carrara marble cafe countertop in a sunlit Parisian-style pastry boutique. In the soft-focus background, a vintage brass espresso cup with velvety crema, delicate silver dessert cutlery, and fresh edible vanilla orchids reflect soft morning window lighting. Shot on 90mm macro lens, f/2.8 aperture, smooth depth of field, bright airy luxury dessert styling, rich glassy syrup reflections, high definition.",
+      "prompt": "Place the custard dessert on a white Carrara marble cafe table with morning sunlight and espresso cup in background",
       "image_path": "data/raw/pair1_image_editing",
-      "source_caption": "A plated traditional caramel coconut custard pudding with caramel sauce",
-      "target_caption": "The caramel coconut custard pudding presented on fine porcelain atop a sunlit white Carrara marble cafe table with espresso and silver cutlery in an airy luxury patisserie"
+      "source_caption": "caramel coconut custard dessert",
+      "target_caption": "caramel coconut custard on a white marble cafe table in morning sunlight"
     }
   ]
 }

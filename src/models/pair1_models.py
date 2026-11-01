@@ -52,9 +52,9 @@ def run_instruct_pix2pix(cases, raw_dir, out_dir, device="cuda"):
         result = pipe(
             prompt=prompt,
             image=orig_img,
-            num_inference_steps=35,
-            image_guidance_scale=1.6,
-            guidance_scale=7.5,
+            num_inference_steps=40,
+            image_guidance_scale=1.2,  
+            guidance_scale=9.0,  
             generator=generator
         ).images[0]
 
@@ -116,21 +116,21 @@ def run_ledits_pp(cases, raw_dir, out_dir, device="cuda"):
 
         # 1. Invert image into latent trajectory
         pipe.invert(
-            image=orig_img,
-            num_inversion_steps=35,
-            skip=0.15,
-            generator=generator
+          image=orig_img,
+          num_inversion_steps=40,
+          skip=0.05, # Lowered from 0.15 to allow earlier latent modification
+          generator=generator
         )
 
         # 2. Apply editing concept
         result = pipe(
-            editing_prompt=concepts,
-            reverse_editing_direction=[False],
-            edit_guidance_scale=[7.0],
-            edit_threshold=[0.75],
-            num_inference_steps=35
+          editing_prompt=concepts,
+          reverse_editing_direction=[False],
+          edit_guidance_scale=[8.0],
+          edit_threshold=[0.35], # Lowered from 0.75 so the attention mask activates
+          num_inference_steps=40
         ).images[0]
-
+        
         # Metric Collection (Identical to Model A)
         latency = time.time() - t0
         vram = (torch.cuda.max_memory_allocated() / (1024**3)) if device == "cuda" else 0.0
