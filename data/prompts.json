@@ -6,5 +6,13 @@
       "prompt": "make this dish on a oak wooden table",
       "image_path": "data/raw/pair1_image_editing"
     }
+  ],
+  "pair2_3d_generation": [
+    {
+      "id": "case_01",
+      "filename": "lobster_dish_isolated.png",
+      "image_path": "data/raw/pair2_3d_generation",
+      "prompt": "a high quality 3d model of a cooked lobster tail dish served on a rustic plate"
+    }
   ]
 }

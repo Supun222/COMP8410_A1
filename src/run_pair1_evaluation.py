@@ -13,7 +13,7 @@ from PIL import Image
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 
-# 1. Setup Project Paths
+# Setup Project Paths
 CURRENT_FILE = Path(__file__).resolve()
 PROJECT_ROOT = CURRENT_FILE.parent.parent if CURRENT_FILE.parent.name == "src" else CURRENT_FILE.parent
 SRC_DIR = PROJECT_ROOT / "src"
