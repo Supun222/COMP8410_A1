@@ -1,9 +1,23 @@
+import sys
+import os 
+import time
 import json
 import torch
 import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
-from pair2_model import run_triposr, run_shape
+
+# Setup Project Paths
+CURRENT_FILE = Path(__file__).resolve()
+PROJECT_ROOT = CURRENT_FILE.parent.parent if CURRENT_FILE.parent.name == "src" else CURRENT_FILE.parent
+SRC_DIR = PROJECT_ROOT / "src"
+
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from models.pair2_models import run_triposr, run_shape
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 

@@ -1,3 +1,4 @@
+import sys
 import os
 import time
 import torch
@@ -7,7 +8,43 @@ from shap_e.diffusion.sample import sample_latents
 from shap_e.diffusion.gaussian_diffusion import diffusion_from_config
 from shap_e.models.download import load_model, load_config
 from shap_e.util.notebooks import decode_latent_mesh
+import types
+import mcubes
+
+
+# Add TripoSR directory to sys.path so 'tsr' is importable
+triposr_path = Path("/content/TripoSR")
+if not triposr_path.exists():
+    triposr_path = Path("./TripoSR")  # Fallback for local path
+
+if str(triposr_path) not in sys.path:
+    sys.path.insert(0, str(triposr_path))
+
+# Create a mock torchmcubes module dynamically in memory
+mock_torchmcubes = types.ModuleType("torchmcubes")
+
+def custom_marching_cubes(volume, threshold=0.0):
+    """Drop-in replacement for torchmcubes using PyMCubes."""
+    if isinstance(volume, torch.Tensor):
+        vol_np = volume.detach().cpu().numpy()
+    else:
+        vol_np = volume
+        
+    vertices, triangles = mcubes.marching_cubes(vol_np, threshold)
+    
+    verts_tensor = torch.from_numpy(vertices.astype("float32")).to(volume.device if isinstance(volume, torch.Tensor) else "cpu")
+    faces_tensor = torch.from_numpy(triangles.astype("int64")).to(volume.device if isinstance(volume, torch.Tensor) else "cpu")
+    return verts_tensor, faces_tensor
+
+mock_torchmcubes.marching_cubes = custom_marching_cubes
+sys.modules["torchmcubes"] = mock_torchmcubes
+
+print("torchmcubes mock registered successfully! TripoSR can now run without compilation errors.")
+
+
+# Now this import will succeed
 from tsr.system import TSR
+
 
 def run_triposr(cases, raw_dir, out_dir, device="cuda"):
 
@@ -37,8 +74,8 @@ def run_triposr(cases, raw_dir, out_dir, device="cuda"):
         t0 = time.time()
 
         with torch.no_grad():
-            scene_codes = model([image], device=device)
-            meshes = model.extract_mesh(scene_codes, resolution=256, threshold=25.0)
+            scene_codes = model([image], device=device) 
+            meshes = model.extract_mesh(scene_codes, True, resolution=256, threshold=25.0)
 
         if device == "cuda":
             torch.cuda.synchronize()
