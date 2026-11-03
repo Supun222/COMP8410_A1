@@ -14,5 +14,12 @@
       "image_path": "data/raw/pair2_3d_generation",
       "prompt": "a high quality 3d model of a cooked lobster tail dish served on a rustic plate"
     }
+  ],
+  "pair3_video_generation": [
+    {
+      "id": "vid_case_01",
+      "prompt": "A chef chopping fresh vegetables on a wooden cutting board, cinematic lighting, slow motion",
+      "negative_prompt": "blurry, distorted, static, deformed"
+    }
   ]
 }

@@ -21,5 +21,11 @@ einops
 omegaconf
 rembg
 PyMCubes
-git+https://github.com/openai/shap-e.git
-git+https://github.com/VAST-AI-Research/TripoSR.git
+# git+https://github.com/openai/shap-e.git
+# git+https://github.com/VAST-AI-Research/TripoSR.git
+
+# video generation packages
+imageio
+imageio-ffmpeg
+av
+peft
