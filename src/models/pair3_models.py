@@ -8,19 +8,15 @@ from diffusers import (
 )
 from diffusers.utils import export_to_video
 
-def count_params(model):
-    """Count parameters in millions."""
+# function for counting parameters
+def count_params(model): 
     if model is None:
         return 0.0
     return sum(p.numel() for p in model.parameters()) / 1e6
 
 def run_modelscope(cases, out_dir, device="cuda"):
-    """
-    Model A: ModelScopeT2V (Inflated 3D U-Net)
-    Returns: {cid: (out_path, latency, vram, total_p)}
-    """
+
     dtype = torch.float16 if device == "cuda" else torch.float32
-    print(f"\n[Model A] Loading ModelScopeT2V on {device}...")
     
     pipe = DiffusionPipeline.from_pretrained(
         "damo-vilab/text-to-video-ms-1.7b", 
@@ -28,42 +24,43 @@ def run_modelscope(cases, out_dir, device="cuda"):
     ).to(device)
 
     if device == "cuda":
-        pipe.enable_model_cpu_offload()
-        pipe.enable_vae_slicing()
+        pipe.enable_model_cpu_offload() 
 
+    # count totall paramerters 
     total_p = count_params(pipe.unet) + count_params(pipe.text_encoder) + count_params(pipe.vae)
     results = {}
 
     for case in cases:
-        cid = case["id"]
-        out_path = str(out_dir / f"sys_a_{cid}.mp4")
-        print(f" -> Generating {cid}...")
+      cid = case["id"]
+      out_path = str(out_dir / f"sys_a_{cid}.mp4")
 
-        if device == "cuda":
-            torch.cuda.reset_peak_memory_stats()
-            torch.cuda.synchronize()
-        t0 = time.time()
+      if device == "cuda":
+        torch.cuda.reset_peak_memory_stats()
+        torch.cuda.synchronize()
+      t0 = time.time()
 
-        generator = torch.Generator(device=device).manual_seed(42)
-        frames = pipe(
-            case["prompt"], 
-            negative_prompt=case.get("negative_prompt", ""),
-            num_inference_steps=25, 
-            generator=generator
-        ).frames[0]
+      # generaing the video
+      generator = torch.Generator(device=device).manual_seed(42)
+      frames = pipe(
+        case["prompt"], 
+        negative_prompt=case.get("negative_prompt", ""),
+        num_inference_steps=25, 
+        generator=generator
+      ).frames[0]
 
-        if device == "cuda":
-            torch.cuda.synchronize()
+      if device == "cuda":
+        torch.cuda.synchronize()
             
-        latency = time.time() - t0
-        vram = (torch.cuda.max_memory_allocated() / (1024**3)) if device == "cuda" else 0.0
+      # calculating metrics    
+      latency = time.time() - t0
+      vram = (torch.cuda.max_memory_allocated() / (1024**3)) if device == "cuda" else 0.0
 
-        export_to_video(frames, out_path, fps=8)
+      export_to_video(frames, out_path, fps=8)
         
-        # Consistent tuple return format
-        results[cid] = (out_path, latency, vram, total_p)
-        print(f"    Finished in {latency:.2f}s (Peak VRAM: {vram:.2f} GB)")
+      # tuple return format
+      results[cid] = (out_path, latency, vram, total_p)
 
+    # improve memory allocations  
     del pipe
     if torch.cuda.is_available(): 
         torch.cuda.empty_cache()
@@ -71,12 +68,8 @@ def run_modelscope(cases, out_dir, device="cuda"):
     return results
 
 def run_animatediff(cases, out_dir, device="cuda"):
-    """
-    Model B: AnimateDiff (Plug-and-play temporal module)
-    Returns: {cid: (out_path, latency, vram, total_p)}
-    """
+
     dtype = torch.float16 if device == "cuda" else torch.float32
-    print(f"\n[Model B] Loading AnimateDiff on {device}...")
     
     adapter = MotionAdapter.from_pretrained("guoyww/animatediff-motion-adapter-v1-5-2", torch_dtype=dtype)
     pipe = AnimateDiffPipeline.from_pretrained(
@@ -90,9 +83,9 @@ def run_animatediff(cases, out_dir, device="cuda"):
     )
 
     if device == "cuda":
-        pipe.enable_model_cpu_offload()
-        pipe.enable_vae_slicing()
+        pipe.enable_model_cpu_offload() 
 
+    # count totall paramerters 
     total_p = count_params(pipe.unet) + count_params(pipe.text_encoder) + count_params(pipe.vae) + count_params(adapter)
     results = {}
 
@@ -106,6 +99,7 @@ def run_animatediff(cases, out_dir, device="cuda"):
             torch.cuda.synchronize()
         t0 = time.time()
 
+        # generaing the video
         generator = torch.Generator(device=device).manual_seed(42)
         frames = pipe(
             prompt=case["prompt"],
@@ -119,6 +113,7 @@ def run_animatediff(cases, out_dir, device="cuda"):
         if device == "cuda":
             torch.cuda.synchronize()
             
+        # calculating metrics    
         latency = time.time() - t0
         vram = (torch.cuda.max_memory_allocated() / (1024**3)) if device == "cuda" else 0.0
 
@@ -126,8 +121,8 @@ def run_animatediff(cases, out_dir, device="cuda"):
         
         # Consistent tuple return format
         results[cid] = (out_path, latency, vram, total_p)
-        print(f"    Finished in {latency:.2f}s (Peak VRAM: {vram:.2f} GB)")
 
+    # improve memory allocations  
     del pipe
     if torch.cuda.is_available(): 
         torch.cuda.empty_cache()

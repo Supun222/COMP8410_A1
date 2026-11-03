@@ -64,20 +64,17 @@ def plot_results(df: pd.DataFrame, results_dir: Path):
     ]
 
     for ax, (col, title, color, fmt) in zip(axes, metrics):
-        if col not in avg_df.columns:
-            ax.axis("off")
-            continue
 
-        bars = ax.bar(avg_df["Model"], avg_df[col], color=color, width=0.45)
-        ax.set_title(title, fontweight="bold")
-        for bar in bars:
-            val = bar.get_height()
-            ax.text(
-                bar.get_x() + bar.get_width() / 2,
-                val / 2,
-                fmt.format(val),
-                ha="center", va="center", color="white", fontweight="bold"
-            )
+      bars = ax.bar(avg_df["Model"], avg_df[col], color=color, width=0.45)
+      ax.set_title(title, fontweight="bold")
+      for bar in bars:
+        val = bar.get_height()
+        ax.text(
+          bar.get_x() + bar.get_width() / 2,
+          val / 2,
+          fmt.format(val),
+          ha="center", va="center", color="white", fontweight="bold"
+        )
 
     plt.tight_layout()
     plot_path = results_dir / "pair2_system_metrics.png"
@@ -86,6 +83,7 @@ def plot_results(df: pd.DataFrame, results_dir: Path):
     print(f"[Plot Saved] {plot_path}")
 
 def main():
+    # defining roots 
     root = PROJECT_ROOT
     raw_dir = root / "data" / "raw" / "pair2_3d_generation"
     out_dir = root / "outputs" / "pair2_3d_generation"
@@ -94,25 +92,24 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
     results_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. Load Prompts JSON if available
+    # loading prompts JSON if available
     prompts_file = root / "data" / "prompts.json"
     cases_from_json = []
     if prompts_file.exists():
         with open(prompts_file, "r", encoding="utf-8") as f:
             cases_from_json = json.load(f).get("pair2_3d_generation", [])
 
-    # 2. Discover raw images
+    # loading images
     cases = load_existing_raw_images(raw_dir, cases_from_json)
 
-    # 3. Detect Device
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"\n[Execution] Running Pair 2 3D evaluation on: {device.upper()}")
+    # detecting device
+    device = "cuda" if torch.cuda.is_available() else "cpu" 
 
-    # 4. Run Model Executions
+    # calling model execution functions
     res_sys_a = run_triposr(cases, raw_dir, out_dir, device=device)
     res_sys_b = run_shape(cases, raw_dir, out_dir, device=device)
 
-    # 5. Collect System Metrics
+    # collecting metric values
     rows = []
     for case in cases:
         cid = case["id"]
@@ -129,7 +126,7 @@ def main():
                 "Peak_VRAM_GB": vram,
             })
 
-    # Render Charts
+    # rendering charts
     df = pd.DataFrame(rows)
     plot_results(df, results_dir)
 
