@@ -21,5 +21,13 @@
       "prompt": "A chef chopping fresh vegetables on a wooden cutting board, cinematic lighting, slow motion",
       "negative_prompt": "blurry, distorted, static, deformed"
     }
+  ],
+  "pair4_video_editing": [
+    {
+      "id": "videdit_case_01",
+      "filename": "car_driving.mp4",
+      "prompt": "make it snow heavily, winter scene",
+      "negative_prompt": "flickering, blurry, distorted, morphed"
+    }
   ]
 }

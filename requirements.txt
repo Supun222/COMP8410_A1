@@ -29,3 +29,9 @@ imageio
 imageio-ffmpeg
 av
 peft
+
+# video editing packages
+opencv-python
+imageio
+imageio-ffmpeg
+av
