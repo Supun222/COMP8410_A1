@@ -1,0 +1,3 @@
+Test_Case,Model,Latency_s,Peak_VRAM_GB,Total_Params_M
+videdit_case_01,IP2P Baseline (System A),111.93440222740173,2.543138027191162,1066.246827
+videdit_case_01,AnimateDiff V2V (System B),78.08105325698853,10.391228199005127,1972.6538670000002

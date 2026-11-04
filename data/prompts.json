@@ -25,9 +25,8 @@
   "pair4_video_editing": [
     {
       "id": "videdit_case_01",
-      "filename": "car_driving.mp4",
-      "prompt": "make it snow heavily, winter scene",
-      "negative_prompt": "flickering, blurry, distorted, morphed"
+      "filename": "chrismas_cake_short.mp4",
+      "prompt": "make it snow heavily, winter scene" 
     }
   ]
 }
