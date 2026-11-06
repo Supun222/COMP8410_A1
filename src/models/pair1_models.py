@@ -9,11 +9,13 @@ from diffusers import (
     DPMSolverMultistepScheduler
 )
 
+def count_params(model): 
+    if model is None:
+        return 0.0
+    return sum(p.numel() for p in model.parameters()) / 1e6
+
 def run_instruct_pix2pix(cases, raw_dir, out_dir, device="cuda"):
-    """
-    Model A: InstructPix2Pix model.
-    Takes cases, executes inference, measures latency/VRAM, and returns {cid: (orig, edit, latency, vram)}.
-    """
+
      # device type
     dtype = torch.float16 if device == "cuda" else torch.float32 
     
@@ -29,6 +31,9 @@ def run_instruct_pix2pix(cases, raw_dir, out_dir, device="cuda"):
 
     os.makedirs(out_dir, exist_ok=True)
     results = {}
+
+    # total count params
+    total_p = count_params(pipe.unet) + count_params(pipe.text_encoder) + count_params(pipe.vae)
 
     for idx, case in enumerate(cases):
         cid = case["id"]
@@ -62,8 +67,7 @@ def run_instruct_pix2pix(cases, raw_dir, out_dir, device="cuda"):
         vram = (torch.cuda.max_memory_allocated() / (1024**3)) if device == "cuda" else 0.0
 
         result.save(output_path)
-        results[cid] = (orig_img, result, latency, vram)
-        print(f"     Finished in {latency:.2f}s (Peak VRAM: {vram:.2f} GB)")
+        results[cid] = (orig_img, result, latency, vram, total_p) 
 
     del pipe
     if torch.cuda.is_available():
@@ -72,12 +76,8 @@ def run_instruct_pix2pix(cases, raw_dir, out_dir, device="cuda"):
     return results
 
 def run_ledits_pp(cases, raw_dir, out_dir, device="cuda"):
-    """
-    Model B: LEDITS++ batch runner.
-    Performs DPM-Solver++ inversion followed by semantic guidance and returns {cid: (orig, edit, latency, vram)}.
-    """
-    dtype = torch.float16 if device == "cuda" else torch.float32
-    print(f"\n[Model B: LEDITS++] Initializing on {device}...")
+
+    dtype = torch.float16 if device == "cuda" else torch.float32 
 
     pipe = LEditsPPPipelineStableDiffusion.from_pretrained(
         "runwayml/stable-diffusion-v1-5",
@@ -91,6 +91,9 @@ def run_ledits_pp(cases, raw_dir, out_dir, device="cuda"):
 
     os.makedirs(out_dir, exist_ok=True)
     results = {}
+
+    # total count params
+    total_p = count_params(pipe.unet) + count_params(pipe.text_encoder) + count_params(pipe.vae)
 
     for idx, case in enumerate(cases):
         cid = case["id"]
@@ -114,20 +117,20 @@ def run_ledits_pp(cases, raw_dir, out_dir, device="cuda"):
 
         generator = torch.Generator(device=device).manual_seed(case.get("seed", 42))
 
-        # 1. Invert image into latent trajectory
+        # iInvert image into latent trajectory
         pipe.invert(
           image=orig_img,
           num_inversion_steps=40,
-          skip=0.05, # Lowered from 0.15 to allow earlier latent modification
+          skip=0.05,  
           generator=generator
         )
 
-        # 2. Apply editing concept
+        # apply editing concept
         result = pipe(
           editing_prompt=concepts,
           reverse_editing_direction=[False],
           edit_guidance_scale=[8.0],
-          edit_threshold=[0.35], # Lowered from 0.75 so the attention mask activates
+          edit_threshold=[0.35],  
           num_inference_steps=40
         ).images[0]
         
@@ -136,8 +139,7 @@ def run_ledits_pp(cases, raw_dir, out_dir, device="cuda"):
         vram = (torch.cuda.max_memory_allocated() / (1024**3)) if device == "cuda" else 0.0
 
         result.save(output_path)
-        results[cid] = (orig_img, result, latency, vram)
-        print(f"     Finished in {latency:.2f}s (Peak VRAM: {vram:.2f} GB)")
+        results[cid] = (orig_img, result, latency, vram, total_p) 
 
     del pipe
     if torch.cuda.is_available():
@@ -145,6 +147,6 @@ def run_ledits_pp(cases, raw_dir, out_dir, device="cuda"):
 
     return results
 
-# Aliases for backwards compatibility
+# aliases for backwards compatibility
 run_instructpix2pix = run_instruct_pix2pix
 run_ledits = run_ledits_pp

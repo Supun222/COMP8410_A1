@@ -38,13 +38,15 @@ def plot_results(df: pd.DataFrame, results_dir: Path):
     cols = [str(c).lower() for c in df.columns]
     latency_col = df.columns[[i for i, c in enumerate(cols) if "latency" in c][0]]
     vram_col = df.columns[[i for i, c in enumerate(cols) if "vram" in c][0]]
+    params_col = df.columns[[i for i, c in enumerate(cols) if "params" in c][0]]
 
-    avg_df = df.groupby("Model")[[latency_col, vram_col]].mean().reset_index()
-    fig, axes = plt.subplots(1, 2, figsize=(14, 4.5))
+    avg_df = df.groupby("Model")[[latency_col, vram_col, params_col]].mean().reset_index()
+    fig, axes = plt.subplots(1, 3, figsize=(14, 4.5))
 
     metrics = [
         (latency_col, "Inference Speed (Latency)\nLower is Better", "#1f77b4", "{:.2f}s"),
-        (vram_col, "Memory (Peak VRAM)\nLower is Better", "#ff7f0e", "{:.2f} GB")
+        (vram_col, "Memory (Peak VRAM)\nLower is Better", "#ff7f0e", "{:.2f} GB"),
+        (params_col, "Total Parameters (M)\nModel Footprint", "#2ca02c", "{:.0f}M")
     ]
 
     for ax, (col, title, color, fmt) in zip(axes, metrics):
@@ -68,7 +70,7 @@ def save_and_record_results(model_name, prefix, res_dict, cases, out_dir, fps=8)
         if cid not in res_dict:
             continue
         
-        frames, latency, vram = res_dict[cid]
+        frames, latency, vram, total_p = res_dict[cid]
         out_path = out_dir / f"{prefix}_{cid}.mp4"
         
         # Export video in the evaluation driver
@@ -79,7 +81,8 @@ def save_and_record_results(model_name, prefix, res_dict, cases, out_dir, fps=8)
             "Test_Case": cid,
             "Model": model_name,
             "Latency_s": latency,
-            "Peak_VRAM_GB": vram 
+            "Peak_VRAM_GB": vram,
+            "Total_Params_M": total_p
         })
     return records
 

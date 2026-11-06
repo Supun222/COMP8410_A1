@@ -58,17 +58,19 @@ def plot_results(df: pd.DataFrame, results_dir: Path):
     
     latency_col = df.columns[[i for i, c in enumerate(cols) if "latency" in c][0]] if any("latency" in c for c in cols) else "Latency_s"
     vram_col = df.columns[[i for i, c in enumerate(cols) if "vram" in c][0]] if any("vram" in c for c in cols) else "Peak_VRAM_GB"
+    params_col = df.columns[[i for i, c in enumerate(cols) if "params" in c][0]]
 
     available_cols = [c for c in [ latency_col, vram_col] if c is not None and c in df.columns]
 
     avg_df = df.groupby("Model")[available_cols].mean().reset_index()
 
-    fig, axes = plt.subplots(1, 2, figsize=(10, 8))
+    fig, axes = plt.subplots(1, 3, figsize=(14, 4.5))
     axes = axes.flatten()
 
     metrics = [
         (latency_col, "Inference Speed (Latency)\nLower is Better", "#1f77b4", "{:.1f}s"),
-        (vram_col, "Memory (Peak VRAM)\nLower is Better", "#ff7f0e", "{:.1f} GB")
+        (vram_col, "Memory (Peak VRAM)\nLower is Better", "#ff7f0e", "{:.1f} GB"),
+        (params_col, "Total Parameters (M)\nModel Footprint", "#2ca02c", "{:.0f}M")
     ]
 
     for ax, (col, title, color, fmt) in zip(axes, metrics):
@@ -121,7 +123,7 @@ def main():
 
     rows = []
 
-    # #Evalution metrics 
+    # evalution metrics 
     for case in cases:
       cid = case["id"]
 
@@ -129,7 +131,7 @@ def main():
         ("InstructPix2Pix (System A)", res_sys_a),
         ("LEDITS++ (System B)", res_sys_b),
       ]:
-        _, _, latency, vram = res_dict[cid]
+        _, _, latency, vram, total_p = res_dict[cid]
             
         rows.append({
           "Test_Case": cid,
@@ -137,6 +139,7 @@ def main():
           "Model": model_name,
           "Latency_s": latency,
           "Peak_VRAM_GB": vram,
+          "Total_Params_M": total_p
         })
 
     # Build DataFrame and Render Results

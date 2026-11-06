@@ -39,6 +39,7 @@ def run_modelscope(cases, out_dir, device="cuda"):
         torch.cuda.synchronize()
       t0 = time.time()
 
+      
       # generaing the video
       generator = torch.Generator(device=device).manual_seed(42)
       frames = pipe(
