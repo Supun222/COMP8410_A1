@@ -37,7 +37,6 @@ def run_ip2p_frame_by_frame(cases, raw_dir, device="cuda"):
     if device == "cuda":
         pipe.enable_model_cpu_offload()
 
-    total_p = count_params(pipe.unet) + count_params(pipe.text_encoder) + count_params(pipe.vae)
     results = {}
 
     for case in cases:
@@ -72,7 +71,7 @@ def run_ip2p_frame_by_frame(cases, raw_dir, device="cuda"):
         vram = (torch.cuda.max_memory_allocated() / (1024**3)) if device == "cuda" else 0.0
 
         # Return raw generated frames and performance metrics
-        results[cid] = (edited_frames, latency, vram, total_p)
+        results[cid] = (edited_frames, latency, vram)
 
     del pipe
     if torch.cuda.is_available():
@@ -93,7 +92,6 @@ def run_animatediff_v2v(cases, raw_dir, device="cuda"):
     if device == "cuda":
         pipe.enable_model_cpu_offload()
 
-    total_p = count_params(pipe.unet) + count_params(pipe.text_encoder) + count_params(pipe.vae) + count_params(adapter)
     results = {}
 
     for case in cases:
@@ -125,7 +123,7 @@ def run_animatediff_v2v(cases, raw_dir, device="cuda"):
         vram = (torch.cuda.max_memory_allocated() / (1024**3)) if device == "cuda" else 0.0
 
         # Return raw generated frames and performance metrics
-        results[cid] = (edited_frames, latency, vram, total_p)
+        results[cid] = (edited_frames, latency, vram)
 
     del pipe
     if torch.cuda.is_available():

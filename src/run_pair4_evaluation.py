@@ -38,15 +38,13 @@ def plot_results(df: pd.DataFrame, results_dir: Path):
     cols = [str(c).lower() for c in df.columns]
     latency_col = df.columns[[i for i, c in enumerate(cols) if "latency" in c][0]]
     vram_col = df.columns[[i for i, c in enumerate(cols) if "vram" in c][0]]
-    params_col = df.columns[[i for i, c in enumerate(cols) if "params" in c][0]]
 
-    avg_df = df.groupby("Model")[[latency_col, vram_col, params_col]].mean().reset_index()
-    fig, axes = plt.subplots(1, 3, figsize=(14, 4.5))
+    avg_df = df.groupby("Model")[[latency_col, vram_col]].mean().reset_index()
+    fig, axes = plt.subplots(1, 2, figsize=(14, 4.5))
 
     metrics = [
         (latency_col, "Inference Speed (Latency)\nLower is Better", "#1f77b4", "{:.2f}s"),
-        (vram_col, "Memory (Peak VRAM)\nLower is Better", "#ff7f0e", "{:.2f} GB"),
-        (params_col, "Total Parameters (M)\nModel Footprint", "#2ca02c", "{:.0f}M")
+        (vram_col, "Memory (Peak VRAM)\nLower is Better", "#ff7f0e", "{:.2f} GB")
     ]
 
     for ax, (col, title, color, fmt) in zip(axes, metrics):
@@ -70,7 +68,7 @@ def save_and_record_results(model_name, prefix, res_dict, cases, out_dir, fps=8)
         if cid not in res_dict:
             continue
         
-        frames, latency, vram, total_p = res_dict[cid]
+        frames, latency, vram = res_dict[cid]
         out_path = out_dir / f"{prefix}_{cid}.mp4"
         
         # Export video in the evaluation driver
@@ -81,8 +79,7 @@ def save_and_record_results(model_name, prefix, res_dict, cases, out_dir, fps=8)
             "Test_Case": cid,
             "Model": model_name,
             "Latency_s": latency,
-            "Peak_VRAM_GB": vram,
-            "Total_Params_M": total_p
+            "Peak_VRAM_GB": vram 
         })
     return records
 
@@ -97,30 +94,20 @@ def main():
     results_dir.mkdir(parents=True, exist_ok=True)
 
     cases = load_video_cases(raw_dir, prompts_file)
-    if not cases:
-        print(f"[Warning] No valid test video cases found matching {raw_dir}")
-        return
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    # 1. Run pure model inferences
-    print("\n--- Running IP2P Baseline (System A) ---")
+    # run model inferences 
     res_sys_a = run_ip2p_frame_by_frame(cases, raw_dir, device=device)
-
-    print("\n--- Running AnimateDiff V2V (System B) ---")
     res_sys_b = run_animatediff_v2v(cases, raw_dir, device=device)
 
-    # 2. Export videos and record system metrics
+    # export videos and record system metrics
     rows = []
     rows.extend(save_and_record_results("IP2P Baseline (System A)", "sys_a", res_sys_a, cases, out_dir))
     rows.extend(save_and_record_results("AnimateDiff V2V (System B)", "sys_b", res_sys_b, cases, out_dir))
 
-    # 3. Aggregate metrics, save CSV, and plot
-    df = pd.DataFrame(rows)
-    metrics_csv = results_dir / "pair4_metrics.csv"
-    df.to_csv(metrics_csv, index=False)
-    print(f"[Metrics Saved] {metrics_csv}")
-
+    # plot results
+    df = pd.DataFrame(rows)  
     plot_results(df, results_dir)
 
 if __name__ == "__main__":
