@@ -50,22 +50,21 @@ def load_existing_raw_images(raw_dir: Path, cases_json: list) -> list:
   return active_cases
 
 def plot_results(df: pd.DataFrame, results_dir: Path):
-
+    if df.empty:
+        return
     results_dir = Path(results_dir)
     results_dir.mkdir(parents=True, exist_ok=True)
 
     cols = [str(c).lower() for c in df.columns]
     
-    latency_col = df.columns[[i for i, c in enumerate(cols) if "latency" in c][0]] if any("latency" in c for c in cols) else "Latency_s"
-    vram_col = df.columns[[i for i, c in enumerate(cols) if "vram" in c][0]] if any("vram" in c for c in cols) else "Peak_VRAM_GB"
+    latency_col = df.columns[[i for i, c in enumerate(cols) if "latency" in c][0]]
+    vram_col = df.columns[[i for i, c in enumerate(cols) if "vram" in c][0]]
     params_col = df.columns[[i for i, c in enumerate(cols) if "params" in c][0]]
 
-    available_cols = [c for c in [ latency_col, vram_col] if c is not None and c in df.columns]
-
+    available_cols = [latency_col, vram_col, params_col]
     avg_df = df.groupby("Model")[available_cols].mean().reset_index()
 
     fig, axes = plt.subplots(1, 3, figsize=(14, 4.5))
-    axes = axes.flatten()
 
     metrics = [
         (latency_col, "Inference Speed (Latency)\nLower is Better", "#1f77b4", "{:.1f}s"),
@@ -74,10 +73,6 @@ def plot_results(df: pd.DataFrame, results_dir: Path):
     ]
 
     for ax, (col, title, color, fmt) in zip(axes, metrics):
-        if col is None or col not in avg_df.columns:
-            ax.axis('off')
-            continue
-            
         bars = ax.bar(avg_df["Model"], avg_df[col], color=color, width=0.45)
         ax.set_title(title, fontweight="bold")
         for bar in bars:
@@ -90,7 +85,7 @@ def plot_results(df: pd.DataFrame, results_dir: Path):
             )
 
     plt.tight_layout()
-    plot_path = results_dir / "pair1_4_core_metrics.png"
+    plot_path = results_dir / "pair1_system_metrics.png"
     plt.savefig(plot_path, dpi=200)
     plt.close()
     print(f"[Plot Saved] {plot_path}")
