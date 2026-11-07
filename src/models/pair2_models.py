@@ -93,9 +93,9 @@ def run_triposr(cases, raw_dir, out_dir, device="cuda"):
             torch.cuda.synchronize()
         t0 = time.time()
 
-        # Optimization 2: Float16 Autocast & Optimization 3: Optimal Marching Cubes grid (160)
+        # Autocast & Optimization 3: Optimal Marching Cubes grid (160)
         with torch.no_grad():
-            # 1. Generate scene codes (cast to float32 after inference)
+            # Generate scene codes (cast to float32 after inference)
             with torch.autocast(device_type="cuda", dtype=torch.float16, enabled=(device == "cuda")):
                 scene_codes = model([image], device=device)
             
@@ -105,7 +105,7 @@ def run_triposr(cases, raw_dir, out_dir, device="cuda"):
             elif isinstance(scene_codes, (list, tuple)):
                 scene_codes = [sc.float() if isinstance(sc, torch.Tensor) else sc for sc in scene_codes]
 
-            # 2. Extract polygonal mesh using resolution=160
+            # Extract polygonal mesh using resolution=160
             meshes = model.extract_mesh(
                 scene_codes, 
                 has_vertex_color=True, 
