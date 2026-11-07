@@ -15,6 +15,7 @@
 *.ckpt
 *.engine
 *.h5
+*.ipynb
 
 # Hugging Face & Torch cache directories
 .cache/
